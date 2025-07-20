@@ -1,5 +1,5 @@
-streamlit
-torch==2.0.1
-torchvision==0.15.2
+streamlit>=1.33
+torch
+torchvision
 pandas
 Pillow
