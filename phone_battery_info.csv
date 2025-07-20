@@ -1,0 +1,8 @@
+﻿model,battery_info,mAh,remove,wh
+Samsung Galaxy A06,Li-Ion ,3000 mAh,non-removable,
+Samsung Galaxy A05S,Li-Po ,5000 mAh,,
+Samsung Galaxy A32,Li-Ion ,5000 mAh,,
+iPhone 11,Li-Ion  ,"3110 mAh,",non-removable, 11.91 Wh
+iPhone 12,Li-Ion  ,2815 mAh,,10.78 Wh
+iPhone 13,Li-Ion  ,3240 mAh,,12.41 Wh
+iPhone 15,Li-Ion  ,3349 mAh,,12.89 Wh
