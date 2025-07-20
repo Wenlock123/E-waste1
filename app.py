@@ -14,12 +14,17 @@ MAPPING_DICT = {
 }
 
 # ====== LOAD MODEL ======
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model = models.resnet18(pretrained=False)
-model.fc = torch.nn.Linear(model.fc.in_features, len(CLASS_NAMES))
-model.load_state_dict(torch.load("best_model.pth", map_location=device))
-model.to(device)
-model.eval()
+@st.cache_resource
+def load_model():
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = models.resnet18(pretrained=False)
+    model.fc = torch.nn.Linear(model.fc.in_features, len(CLASS_NAMES))
+    model.load_state_dict(torch.load("best_model_fixed.pth", map_location=device))
+    model.to(device)
+    model.eval()
+    return model, device
+
+model, device = load_model()
 
 # ====== TRANSFORM ======
 val_transform = transforms.Compose([
