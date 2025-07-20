@@ -1,26 +1,35 @@
 import streamlit as st
 import torch
 import torchvision.transforms as transforms
+from torchvision.models import resnet18
 from PIL import Image
 import json
 
 # ----- โหลดโมเดล -----
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# โมเดลควรเหมือนตอน train
-model = ...  # ใส่โค้ดสร้างโมเดลของคุณ เช่น resnet18(pretrained=False)
+# สร้างโมเดลให้เหมือนตอน train
+model = resnet18(pretrained=False)
+# สมมติว่า output class เท่ากับจำนวน label ใน labels.json
+# โหลด labels ก่อนเพื่อกำหนด fc layer ได้ถูกต้อง
+with open("labels.json") as f:
+    idx_to_label = json.load(f)
+
+num_classes = len(idx_to_label)
+model.fc = torch.nn.Linear(model.fc.in_features, num_classes)
+
+# โหลดน้ำหนักโมเดล
 model.load_state_dict(torch.load("model.pth", map_location=device))
 model.to(device)
 model.eval()
-
-# ----- โหลด label -----
-with open("labels.json") as f:
-    idx_to_label = json.load(f)
 
 # ----- Transform -----
 transform = transforms.Compose([
     transforms.Resize((224, 224)),
     transforms.ToTensor(),
+    # Normalize ตามค่า mean/std ของ ImageNet (ResNet18 ถูก train บน ImageNet)
+    transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                         std=[0.229, 0.224, 0.225])
 ])
 
 # ----- ฟังก์ชันให้คะแนนความอันตราย -----
