@@ -8,28 +8,34 @@ import gdown
 import pandas as pd
 import re
 
-# ==== CONFIG ====
+# ===== CONFIG =====
 CLASS_NAMES = ["Galaxy_A32", "iPhone_11"]
-CSV_URL = "https://raw.githubusercontent.com/yourusername/yourrepo/main/phone_battery_info.csv"  # 🔁 แก้ URL ให้ตรงกับ GitHub ของคุณ
+CSV_FILE_ID = "1xEccDMzWIHPEop58SlQdJwITr5y50mNj"
+MODEL_FILE_ID = "1vud0Qk1PHy7_jLgSUwwurUN7KKw1WeIw"
+CSV_PATH = "phone_battery_info.csv"
+MODEL_PATH = "best_model_fixed.pth"
 
-# ==== MODEL LOADING ====
+# ===== LOAD MODEL FROM GOOGLE DRIVE =====
 @st.cache_resource
-def load_model(model_path):
+def load_model():
+    if not os.path.exists(MODEL_PATH):
+        url = f"https://drive.google.com/uc?id={MODEL_FILE_ID}"
+        gdown.download(url, MODEL_PATH, quiet=False)
     model = models.resnet18(pretrained=False)
     model.fc = nn.Linear(model.fc.in_features, len(CLASS_NAMES))
-    model.load_state_dict(torch.load(model_path, map_location=torch.device('cpu')))
+    model.load_state_dict(torch.load(MODEL_PATH, map_location=torch.device('cpu')))
     model.eval()
     return model
 
-def download_model():
-    model_path = "best_model_fixed.pth"
-    if not os.path.exists(model_path):
-        file_id = "1vud0Qk1PHy7_jLgSUwwurUN7KKw1WeIw"
-        url = f"https://drive.google.com/uc?id={file_id}"
-        gdown.download(url, model_path, quiet=False)
-    return model_path
+# ===== LOAD CSV FROM GOOGLE DRIVE =====
+@st.cache_data
+def load_battery_data():
+    if not os.path.exists(CSV_PATH):
+        url = f"https://drive.google.com/uc?id={CSV_FILE_ID}"
+        gdown.download(url, CSV_PATH, quiet=False)
+    return pd.read_csv(CSV_PATH)
 
-# ==== IMAGE TRANSFORM ====
+# ===== IMAGE TRANSFORM =====
 val_transform = transforms.Compose([
     transforms.Resize((224, 224)),
     transforms.ToTensor(),
@@ -37,6 +43,7 @@ val_transform = transforms.Compose([
                          [0.229, 0.224, 0.225])
 ])
 
+# ===== PREDICT IMAGE =====
 def predict_image(model, img):
     image = Image.open(img).convert('RGB')
     image = val_transform(image).unsqueeze(0)
@@ -45,9 +52,10 @@ def predict_image(model, img):
         _, preds = torch.max(outputs, 1)
     return CLASS_NAMES[preds.item()]
 
-# ==== BATTERY SCORE ====
+# ===== DANGER SCORE =====
 def grade_battery_danger(row):
     score = 0
+
     info = str(row['battery_info'])
     if 'Li-Po' in info:
         score += 2
@@ -75,18 +83,13 @@ def grade_battery_danger(row):
     if re.search(r'\d+\.\d+', wh_text):
         score += 2
 
-    return score * 1000  # แปลงเป็นหลักพัน
+    return score * 1000
 
-# ==== LOAD CSV FROM GITHUB ====
-@st.cache_data
-def load_battery_data():
-    return pd.read_csv(CSV_URL)
-
-# ==== STREAMLIT UI ====
+# ===== STREAMLIT UI =====
+st.set_page_config(page_title="🔋 Battery Classifier", layout="centered")
 st.title("🔋 Mobile Battery Classifier with Danger Score")
 
-model_path = download_model()
-model = load_model(model_path)
+model = load_model()
 df = load_battery_data()
 
 uploaded_file = st.file_uploader("📤 Upload a phone image", type=["jpg", "jpeg", "png"])
@@ -96,13 +99,12 @@ if uploaded_file is not None:
     predicted_class = predict_image(model, uploaded_file)
     st.success(f"📱 Predicted Model: **{predicted_class}**")
 
-    # ค้นหาแถวที่ตรงกับผลลัพธ์
     row = df[df['model'].str.contains(predicted_class, case=False, na=False)]
     if not row.empty:
         row = row.iloc[0]
         score = grade_battery_danger(row)
         st.markdown(f"💥 **Danger Score:** `{score}`")
-        st.markdown("🔎 **Battery Info**:")
+        st.markdown("🔎 **Battery Info:**")
         st.write({
             "Battery": row["battery_info"],
             "Capacity (mAh)": row["mAh"],
