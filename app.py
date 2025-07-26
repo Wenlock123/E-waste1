@@ -11,6 +11,9 @@ import re
 # ==== CONFIG ====
 CLASS_NAMES = ["Galaxy_A32", "iPhone_11"]
 CSV_DRIVE_URL = "https://drive.google.com/uc?id=1xEccDMzWIHPEop58SlQdJwITr5y50mNj"
+MODEL_DRIVE_URL = "https://drive.google.com/uc?id=1vud0Qk1PHy7_jLgSUwwurUN7KKw1WeIw"
+MODEL_FILENAME = "best_model_fixed.pth"
+CSV_FILENAME = "phone_battery_info.csv"
 
 # ==== โหลดโมเดล ====
 @st.cache_resource
@@ -22,22 +25,18 @@ def load_model(model_path):
     return model
 
 def download_model():
-    model_path = "best_model_fixed.pth"
-    if not os.path.exists(model_path):
-        file_id = "1vud0Qk1PHy7_jLgSUwwurUN7KKw1WeIw"
-        url = f"https://drive.google.com/uc?id={file_id}"
-        gdown.download(url, model_path, quiet=False)
-    return model_path
+    if not os.path.exists(MODEL_FILENAME):
+        gdown.download(MODEL_DRIVE_URL, MODEL_FILENAME, quiet=False)
+    return MODEL_FILENAME
 
-# ==== โหลดข้อมูล CSV ====
+# ==== โหลด CSV ====
 @st.cache_data
 def load_battery_data():
-    csv_path = "phone_battery_info.csv"
-    if not os.path.exists(csv_path):
-        gdown.download(CSV_DRIVE_URL, csv_path, quiet=False)
-    return pd.read_csv(csv_path)
+    if not os.path.exists(CSV_FILENAME):
+        gdown.download(CSV_DRIVE_URL, CSV_FILENAME, quiet=False)
+    return pd.read_csv(CSV_FILENAME)
 
-# ==== แปลงภาพ ====
+# ==== เตรียมภาพ ====
 val_transform = transforms.Compose([
     transforms.Resize((224, 224)),
     transforms.ToTensor(),
@@ -53,7 +52,7 @@ def predict_image(model, img):
         _, preds = torch.max(outputs, 1)
     return CLASS_NAMES[preds.item()]
 
-# ==== ฟังก์ชันให้ชื่อใกล้เคียงใน CSV ====
+# ==== ค้นหาชื่อรุ่นใกล้เคียงใน CSV ====
 def find_closest_model(df, predicted_class):
     predicted_normalized = predicted_class.lower().replace("_", "").replace("-", "").replace(" ", "")
     for _, row in df.iterrows():
@@ -62,9 +61,10 @@ def find_closest_model(df, predicted_class):
             return row
     return None
 
-# ==== คำนวณ danger score ====
+# ==== คำนวณ Danger Score ====
 def grade_battery_danger(row):
     score = 0
+
     info = str(row['battery_info'])
     if 'Li-Po' in info:
         score += 2
@@ -92,9 +92,9 @@ def grade_battery_danger(row):
     if re.search(r'\d+\.\d+', wh_text):
         score += 2
 
-    return score * 1000
+    return score * 100  # ✅ ปรับให้คะแนนอยู่ในพันต้น ๆ
 
-# ==== UI ====
+# ==== Streamlit UI ====
 st.title("🔋 Mobile Battery Danger Classifier")
 
 model_path = download_model()
