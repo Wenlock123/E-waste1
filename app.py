@@ -8,34 +8,36 @@ import gdown
 import pandas as pd
 import re
 
-# ===== CONFIG =====
+# ==== CONFIG ====
 CLASS_NAMES = ["Galaxy_A32", "iPhone_11"]
-CSV_FILE_ID = "1xEccDMzWIHPEop58SlQdJwITr5y50mNj"
-MODEL_FILE_ID = "1vud0Qk1PHy7_jLgSUwwurUN7KKw1WeIw"
-CSV_PATH = "phone_battery_info.csv"
-MODEL_PATH = "best_model_fixed.pth"
+CSV_DRIVE_URL = "https://drive.google.com/uc?id=1xEccDMzWIHPEop58SlQdJwITr5y50mNj"
 
-# ===== LOAD MODEL FROM GOOGLE DRIVE =====
+# ==== โหลดโมเดล ====
 @st.cache_resource
-def load_model():
-    if not os.path.exists(MODEL_PATH):
-        url = f"https://drive.google.com/uc?id={MODEL_FILE_ID}"
-        gdown.download(url, MODEL_PATH, quiet=False)
+def load_model(model_path):
     model = models.resnet18(pretrained=False)
     model.fc = nn.Linear(model.fc.in_features, len(CLASS_NAMES))
-    model.load_state_dict(torch.load(MODEL_PATH, map_location=torch.device('cpu')))
+    model.load_state_dict(torch.load(model_path, map_location=torch.device('cpu')))
     model.eval()
     return model
 
-# ===== LOAD CSV FROM GOOGLE DRIVE =====
+def download_model():
+    model_path = "best_model_fixed.pth"
+    if not os.path.exists(model_path):
+        file_id = "1vud0Qk1PHy7_jLgSUwwurUN7KKw1WeIw"
+        url = f"https://drive.google.com/uc?id={file_id}"
+        gdown.download(url, model_path, quiet=False)
+    return model_path
+
+# ==== โหลดข้อมูล CSV ====
 @st.cache_data
 def load_battery_data():
-    if not os.path.exists(CSV_PATH):
-        url = f"https://drive.google.com/uc?id={CSV_FILE_ID}"
-        gdown.download(url, CSV_PATH, quiet=False)
-    return pd.read_csv(CSV_PATH)
+    csv_path = "phone_battery_info.csv"
+    if not os.path.exists(csv_path):
+        gdown.download(CSV_DRIVE_URL, csv_path, quiet=False)
+    return pd.read_csv(csv_path)
 
-# ===== IMAGE TRANSFORM =====
+# ==== แปลงภาพ ====
 val_transform = transforms.Compose([
     transforms.Resize((224, 224)),
     transforms.ToTensor(),
@@ -43,7 +45,6 @@ val_transform = transforms.Compose([
                          [0.229, 0.224, 0.225])
 ])
 
-# ===== PREDICT IMAGE =====
 def predict_image(model, img):
     image = Image.open(img).convert('RGB')
     image = val_transform(image).unsqueeze(0)
@@ -52,10 +53,18 @@ def predict_image(model, img):
         _, preds = torch.max(outputs, 1)
     return CLASS_NAMES[preds.item()]
 
-# ===== DANGER SCORE =====
+# ==== ฟังก์ชันให้ชื่อใกล้เคียงใน CSV ====
+def find_closest_model(df, predicted_class):
+    predicted_normalized = predicted_class.lower().replace("_", "").replace("-", "").replace(" ", "")
+    for _, row in df.iterrows():
+        model_name = str(row['model']).lower().replace("_", "").replace("-", "").replace(" ", "")
+        if predicted_normalized in model_name or model_name in predicted_normalized:
+            return row
+    return None
+
+# ==== คำนวณ danger score ====
 def grade_battery_danger(row):
     score = 0
-
     info = str(row['battery_info'])
     if 'Li-Po' in info:
         score += 2
@@ -85,11 +94,11 @@ def grade_battery_danger(row):
 
     return score * 1000
 
-# ===== STREAMLIT UI =====
-st.set_page_config(page_title="🔋 Battery Classifier", layout="centered")
-st.title("🔋 Mobile Battery Classifier with Danger Score")
+# ==== UI ====
+st.title("🔋 Mobile Battery Danger Classifier")
 
-model = load_model()
+model_path = download_model()
+model = load_model(model_path)
 df = load_battery_data()
 
 uploaded_file = st.file_uploader("📤 Upload a phone image", type=["jpg", "jpeg", "png"])
@@ -99,17 +108,16 @@ if uploaded_file is not None:
     predicted_class = predict_image(model, uploaded_file)
     st.success(f"📱 Predicted Model: **{predicted_class}**")
 
-    row = df[df['model'].str.contains(predicted_class, case=False, na=False)]
-    if not row.empty:
-        row = row.iloc[0]
+    row = find_closest_model(df, predicted_class)
+    if row is not None:
         score = grade_battery_danger(row)
         st.markdown(f"💥 **Danger Score:** `{score}`")
         st.markdown("🔎 **Battery Info:**")
         st.write({
-            "Battery": row["battery_info"],
+            "Battery Type": row["battery_info"],
             "Capacity (mAh)": row["mAh"],
             "Removable": row["remove"],
-            "Wh": row["wh"]
+            "Energy (Wh)": row["wh"]
         })
     else:
         st.warning("⚠️ ไม่พบข้อมูลแบตเตอรี่สำหรับรุ่นนี้ในไฟล์ CSV.")
