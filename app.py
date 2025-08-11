@@ -108,7 +108,7 @@ st.set_page_config(page_title="E-WASTE", page_icon="♻️", layout="centered")
 # Header
 st.markdown(
     """
-    <h1 style='text-align:center; color:black;'>E-WASTE</h1>
+    <h1 style='text-align:center; color:green;'>♻️ E-WASTE</h1>
     <p style='text-align:center; font-size:18px;'>“ยินดีด้วย! คุณได้เป็นหนึ่งในคนที่ช่วยโลกเอาไว้”</p>
     """,
     unsafe_allow_html=True
@@ -126,6 +126,10 @@ uploaded_file = st.file_uploader("", type=["jpg", "jpeg", "png"])
 if uploaded_file is not None:
     st.image(uploaded_file, caption="📷 Uploaded Image", use_column_width=True)
     predicted_class = predict_image(model, uploaded_file)
+
+    # แสดงชื่อรุ่นมือถือที่ตรวจพบ
+    st.markdown(f"### 📱 รุ่นมือถือที่ตรวจพบ: **{predicted_class}**")
+
     row = find_closest_model(df, predicted_class)
 
     if row is not None:
@@ -139,7 +143,7 @@ if uploaded_file is not None:
         # ปุ่มเลือกศูนย์จัดส่ง
         st.markdown(
             """
-            <div style='background-color:#FFD700; padding:10px; border-radius:8px; text-align:center; font-weight:bold;'>
+            <div style='background-color:#90EE90; padding:10px; border-radius:8px; text-align:center; font-weight:bold;'>
                 เลือกจัดส่งศูนย์ที่ใกล้ที่สุด
             </div>
             """,
