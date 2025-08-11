@@ -1,4 +1,4 @@
-import os
+import os 
 import torch
 import torch.nn as nn
 from torchvision import models, transforms
@@ -9,10 +9,19 @@ import pandas as pd
 import re
 
 # ==== CONFIG ====
-CLASS_NAMES = ["Galaxy_A32", "iPhone_11"]
+CLASS_NAMES = [
+    "Galaxy_A06",
+    "Galaxy_A05S",
+    "Galaxy_A32",
+    "iPhone_11",
+    "iPhone_12",
+    "iPhone_13",
+    "iPhone_15"
+]
+
 CSV_DRIVE_URL = "https://drive.google.com/uc?id=1xEccDMzWIHPEop58SlQdJwITr5y50mNj"
-MODEL_DRIVE_URL = "https://drive.google.com/uc?id=1vud0Qk1PHy7_jLgSUwwurUN7KKw1WeIw"
-MODEL_FILENAME = "best_model_fixed.pth"
+MODEL_DRIVE_URL = "https://drive.google.com/uc?id=1PfH1JF82_OOo_W24SITmB-aiCUYMxlPN"
+MODEL_FILENAME = "best_model_7classes.pth"
 CSV_FILENAME = "phone_battery_info.csv"
 
 # ==== โหลดโมเดล ====
@@ -64,7 +73,6 @@ def find_closest_model(df, predicted_class):
 # ==== คำนวณ Danger Score ====
 def grade_battery_danger(row):
     score = 0
-
     info = str(row['battery_info'])
     if 'Li-Po' in info:
         score += 2
@@ -92,32 +100,53 @@ def grade_battery_danger(row):
     if re.search(r'\d+\.\d+', wh_text):
         score += 2
 
-    return score * 100  # ✅ ปรับให้คะแนนอยู่ในพันต้น ๆ
+    return score * 100
 
 # ==== Streamlit UI ====
-st.title("🔋 Mobile Battery Danger Classifier")
+st.set_page_config(page_title="E-WASTE", page_icon="♻️", layout="centered")
+
+# Header
+st.markdown(
+    """
+    <h1 style='text-align:center; color:black;'>E-WASTE</h1>
+    <p style='text-align:center; font-size:18px;'>“ยินดีด้วย! คุณได้เป็นหนึ่งในคนที่ช่วยโลกเอาไว้”</p>
+    """,
+    unsafe_allow_html=True
+)
 
 model_path = download_model()
 model = load_model(model_path)
 df = load_battery_data()
 
-uploaded_file = st.file_uploader("📤 Upload a phone image", type=["jpg", "jpeg", "png"])
+# Upload or Take Photo
+st.subheader("📤 อัปโหลดภาพถ่าย หรือ ถ่ายภาพ")
+uploaded_file = st.file_uploader("", type=["jpg", "jpeg", "png"])
+# st.camera_input("📸 ถ่ายภาพ")  # ถ้าต้องการเปิดใช้กล้อง
 
 if uploaded_file is not None:
     st.image(uploaded_file, caption="📷 Uploaded Image", use_column_width=True)
     predicted_class = predict_image(model, uploaded_file)
-    st.success(f"📱 Predicted Model: **{predicted_class}**")
-
     row = find_closest_model(df, predicted_class)
+
     if row is not None:
         score = grade_battery_danger(row)
-        st.markdown(f"💥 **Danger Score:** `{score}`")
-        st.markdown("🔎 **Battery Info:**")
-        st.write({
-            "Battery Type": row["battery_info"],
-            "Capacity (mAh)": row["mAh"],
-            "Removable": row["remove"],
-            "Energy (Wh)": row["wh"]
-        })
+        st.markdown(f"**Score:** {score}")
+        
+        # ผลเสีย
+        if "Li-Po" in str(row['battery_info']):
+            st.write("📱 แบตเตอรี่ Li-Po ประกอบด้วยสารเคมีอันตราย เช่น ลิเทียม ที่ติดไฟง่าย เจลโพลิเมอร์ที่ไวไฟ และโลหะหนักอย่างโคบอลต์ นิกเกิล และแมงกานีส ซึ่งอาจก่อให้เกิดพิษต่อร่างกาย มะเร็ง หรือปนเปื้อนสิ่งแวดล้อม หากแบตรั่ว บวม หรือถูกเผา")
+
+        # ปุ่มเลือกศูนย์จัดส่ง
+        st.markdown(
+            """
+            <div style='background-color:#FFD700; padding:10px; border-radius:8px; text-align:center; font-weight:bold;'>
+                เลือกจัดส่งศูนย์ที่ใกล้ที่สุด
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+        st.button("ศูนย์ AIS เซ็นทรัลแอร์พอร์ต")
+        st.button("Siam TV สาขาหางดง")
+        st.button("ศูนย์ True เซ็นทรัลเฟสติวัลเชียงใหม่")
     else:
         st.warning("⚠️ ไม่พบข้อมูลแบตเตอรี่สำหรับรุ่นนี้ในไฟล์ CSV.")
