@@ -20,8 +20,8 @@ CLASS_NAMES = [
 ]
 
 CSV_DRIVE_URL = "https://drive.google.com/uc?id=1xEccDMzWIHPEop58SlQdJwITr5y50mNj"
-MODEL_DRIVE_URL = "https://drive.google.com/uc?id=1IGRYczTwiaGnouIOGI6QAzPPZOh0Jdj8"  # ลิงก์ไฟล์ใหม่ e_waste_model_new.pth
-MODEL_FILENAME = "e_waste_model_new.pth"
+MODEL_DRIVE_URL = "https://drive.google.com/uc?id=1JaFioKlbrbjbYCdMM77iOCoUOl5ZUKR8"  # ลิงก์ไฟล์ best_model_v2.pth
+MODEL_FILENAME = "best_model_v2.pth"
 CSV_FILENAME = "phone_battery_info.csv"
 
 # ==== โหลดโมเดล ResNet50 ====
@@ -147,7 +147,7 @@ if uploaded_file is not None:
     if row is not None:
         score = grade_battery_danger(row)
         st.markdown(f"**Score:** {score}")
-        
+
         if "Li-Po" in str(row['battery_info']):
             st.write("📱 แบตเตอรี่ Li-Po ประกอบด้วยสารเคมีอันตราย เช่น ลิเทียม ที่ติดไฟง่าย เจลโพลิเมอร์ที่ไวไฟ และโลหะหนักอย่างโคบอลต์ นิกเกิล และแมงกานีส ซึ่งอาจก่อให้เกิดพิษต่อร่างกาย มะเร็ง หรือปนเปื้อนสิ่งแวดล้อม หากแบตรั่ว บวม หรือถูกเผา")
 
