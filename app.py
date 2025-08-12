@@ -1,4 +1,4 @@
-import os 
+import os
 import torch
 import torch.nn as nn
 from torchvision import models, transforms
@@ -159,8 +159,11 @@ if uploaded_file is not None:
             """,
             unsafe_allow_html=True
         )
-        st.button("ศูนย์ AIS เซ็นทรัลแอร์พอร์ต")
-        st.button("Siam TV สาขาหางดง")
-        st.button("ศูนย์ True เซ็นทรัลเฟสติวัลเชียงใหม่")
+
+        # ลิงก์สถานที่ศูนย์จัดส่ง
+        st.markdown("[📍 ศูนย์ AIS เซ็นทรัลแอร์พอร์ต เชียงใหม่](https://goo.gl/maps/v6PbX3CgCxVzZSTV9)", unsafe_allow_html=True)
+        st.markdown("[📍 Siam TV สาขาหางดง](https://goo.gl/maps/qN4F7vD3EJXoAXkT8)", unsafe_allow_html=True)
+        st.markdown("[📍 ศูนย์ True เซ็นทรัลเฟสติวัลเชียงใหม่](https://goo.gl/maps/gnN4B4vRkDKGzQTF9)", unsafe_allow_html=True)
+
     else:
         st.warning("⚠️ ไม่พบข้อมูลแบตเตอรี่สำหรับรุ่นนี้ในไฟล์ CSV.")
