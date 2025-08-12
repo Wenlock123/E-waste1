@@ -20,7 +20,7 @@ CLASS_NAMES = [
 ]
 
 CSV_DRIVE_URL = "https://drive.google.com/uc?id=1xEccDMzWIHPEop58SlQdJwITr5y50mNj"
-MODEL_DRIVE_URL = "https://drive.google.com/uc?id=1JaFioKlbrbjbYCdMM77iOCoUOl5ZUKR8"  # ลิงก์ไฟล์ best_model_v2.pth
+MODEL_DRIVE_URL = "https://drive.google.com/uc?id=1JaFioKlbrbjbYCdMM77iOCoUOl5ZUKR8"
 MODEL_FILENAME = "best_model_v2.pth"
 CSV_FILENAME = "phone_battery_info.csv"
 
@@ -28,7 +28,6 @@ CSV_FILENAME = "phone_battery_info.csv"
 @st.cache_resource
 def load_model(model_path):
     checkpoint = torch.load(model_path, map_location=torch.device('cpu'))
-    # ลบข้อความแสดง checkpoint keys ทิ้งแล้ว
 
     model = models.resnet50(pretrained=False)
     num_classes = len(CLASS_NAMES)
@@ -41,10 +40,8 @@ def load_model(model_path):
         if "model_state_dict" in checkpoint:
             model.load_state_dict(checkpoint["model_state_dict"])
         else:
-            # checkpoint itself is state_dict
             model.load_state_dict(checkpoint)
     else:
-        # ถ้า checkpoint ไม่ใช่ dict ก็ลองโหลดตรงๆ
         model.load_state_dict(checkpoint)
 
     model.eval()
@@ -143,10 +140,9 @@ st.subheader("📤 อัปโหลดภาพถ่าย หรือ ถ�
 uploaded_file = st.file_uploader("", type=["jpg", "jpeg", "png"])
 
 if uploaded_file is not None:
-    st.image(uploaded_file, caption="📷 Uploaded Image", use_column_width=True)
+    st.image(uploaded_file, caption="📷 Uploaded Image", use_container_width=True)
     predicted_class = predict_image(model, uploaded_file)
 
-    # แสดงชื่อรุ่นมือถือที่ตรวจพบ
     st.markdown(f"### 📱 รุ่นมือถือที่ตรวจพบ: **{predicted_class}**")
 
     row = find_closest_model(df, predicted_class)
@@ -167,7 +163,6 @@ if uploaded_file is not None:
             unsafe_allow_html=True
         )
 
-        # ลิงก์สถานที่ศูนย์จัดส่ง
         st.markdown("[📍 ศูนย์ AIS เซ็นทรัลแอร์พอร์ต เชียงใหม่](https://goo.gl/maps/v6PbX3CgCxVzZSTV9)", unsafe_allow_html=True)
         st.markdown("[📍 Siam TV สาขาหางดง](https://goo.gl/maps/qN4F7vD3EJXoAXkT8)", unsafe_allow_html=True)
         st.markdown("[📍 ศูนย์ True เซ็นทรัลเฟสติวัลเชียงใหม่](https://goo.gl/maps/gnN4B4vRkDKGzQTF9)", unsafe_allow_html=True)
