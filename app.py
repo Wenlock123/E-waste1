@@ -173,7 +173,7 @@ if uploaded_file is not None:
                           text-decoration:none; border-radius:8px; font-weight:bold;'>
                    📍 ศูนย์ AIS เซ็นทรัลแอร์พอร์ต เชียงใหม่
                 </a>
-                <a href='https://goo.gl/maps/gnN4B4vRkDKGzQTF9' target='_blank'
+                <a href='https://maps.app.goo.gl/3jaZT4eVaeZG2icB8' target='_blank'
                    style='background-color:#FF5722; color:white; padding:12px; text-align:center; 
                           text-decoration:none; border-radius:8px; font-weight:bold;'>
                    📍 ศูนย์ True เซ็นทรัลเฟสติวัล เชียงใหม่
