@@ -9,11 +9,6 @@ import pandas as pd
 import re
 
 # ==== CONFIG ====
-CSV_DRIVE_URL = "https://drive.google.com/uc?id=1xEccDMzWIHPEop58SlQdJwITr5y50mNj"
-MODEL_DRIVE_URL = "https://drive.google.com/uc?id=1mbbk2ljk6i0hKZYTT7urLl-vhVvETsGp"
-MODEL_FILENAME = "e_waste_model_2.pth"
-CSV_FILENAME = "phone_battery_info.csv"
-
 CLASS_NAMES = [
     "Galaxy_A06",
     "Galaxy_A05S",
@@ -24,29 +19,29 @@ CLASS_NAMES = [
     "iPhone_15"
 ]
 
-# ==== โหลดโมเดล ====
+CSV_DRIVE_URL = "https://drive.google.com/uc?id=1xEccDMzWIHPEop58SlQdJwITr5y50mNj"
+MODEL_DRIVE_URL = "https://drive.google.com/uc?id=1mbbk2ljk6i0hKZYTT7urLl-vhVvETsGp"
+MODEL_FILENAME = "e_waste_model_2.pth"
+CSV_FILENAME = "phone_battery_info.csv"
+
+# ==== โหลดโมเดล ResNet50 ====
 @st.cache_resource
 def load_model(model_path):
-    # โหลด state_dict ก่อน
     state_dict = torch.load(model_path, map_location=torch.device('cpu'))
 
-    # ตรวจว่าใช้ ResNet อะไร (18/34/50)
-    # เช็คจาก key ใน state_dict
-    if any("layer4.2.conv3.weight" in k for k in state_dict.keys()):
-        backbone = "resnet50"
-    elif any("layer4.1.conv2.weight" in k for k in state_dict.keys()):
-        backbone = "resnet34"
+    # สร้างโมเดล ResNet50
+    model = models.resnet50(pretrained=False)
+
+    # ตรวจจำนวนคลาสจากไฟล์โมเดล ถ้าเจอ fc.weight
+    fc_weight_key = next((k for k in state_dict.keys() if "fc.weight" in k), None)
+    if fc_weight_key:
+        num_classes = state_dict[fc_weight_key].shape[0]
     else:
-        backbone = "resnet18"
+        num_classes = len(CLASS_NAMES)
 
-    # สร้างโมเดล backbone ตรงกับตอนเทรน
-    model = getattr(models, backbone)(pretrained=False)
-
-    # ตรวจจำนวนคลาสจาก fc.weight
-    num_classes = state_dict["fc.weight"].shape[0]
     model.fc = nn.Linear(model.fc.in_features, num_classes)
 
-    # โหลด weight แบบ strict=False กันพลาด
+    # โหลดน้ำหนัก
     model.load_state_dict(state_dict, strict=False)
     model.eval()
     return model
@@ -77,7 +72,10 @@ def predict_image(model, img):
     with torch.no_grad():
         outputs = model(image)
         _, preds = torch.max(outputs, 1)
-    return CLASS_NAMES[preds.item()] if preds.item() < len(CLASS_NAMES) else f"Class {preds.item()}"
+    if preds.item() < len(CLASS_NAMES):
+        return CLASS_NAMES[preds.item()]
+    else:
+        return f"Class {preds.item()}"
 
 # ==== ค้นหาชื่อรุ่นใกล้เคียงใน CSV ====
 def find_closest_model(df, predicted_class):
@@ -123,6 +121,7 @@ def grade_battery_danger(row):
 # ==== Streamlit UI ====
 st.set_page_config(page_title="E-WASTE", page_icon="♻️", layout="centered")
 
+# Header
 st.markdown(
     """
     <h1 style='text-align:center; color:green;'>♻️ E-WASTE</h1>
@@ -138,11 +137,13 @@ df = load_battery_data()
 # Upload or Take Photo
 st.subheader("📤 อัปโหลดภาพถ่าย หรือ ถ่ายภาพ")
 uploaded_file = st.file_uploader("", type=["jpg", "jpeg", "png"])
+# st.camera_input("📸 ถ่ายภาพ")  # เปิดใช้กล้องได้ถ้าต้องการ
 
 if uploaded_file is not None:
     st.image(uploaded_file, caption="📷 Uploaded Image", use_column_width=True)
     predicted_class = predict_image(model, uploaded_file)
 
+    # แสดงชื่อรุ่นมือถือที่ตรวจพบ
     st.markdown(f"### 📱 รุ่นมือถือที่ตรวจพบ: **{predicted_class}**")
 
     row = find_closest_model(df, predicted_class)
@@ -151,9 +152,11 @@ if uploaded_file is not None:
         score = grade_battery_danger(row)
         st.markdown(f"**Score:** {score}")
         
+        # ผลเสีย
         if "Li-Po" in str(row['battery_info']):
             st.write("📱 แบตเตอรี่ Li-Po ประกอบด้วยสารเคมีอันตราย เช่น ลิเทียม ที่ติดไฟง่าย เจลโพลิเมอร์ที่ไวไฟ และโลหะหนักอย่างโคบอลต์ นิกเกิล และแมงกานีส ซึ่งอาจก่อให้เกิดพิษต่อร่างกาย มะเร็ง หรือปนเปื้อนสิ่งแวดล้อม หากแบตรั่ว บวม หรือถูกเผา")
 
+        # ปุ่มเลือกศูนย์จัดส่ง
         st.markdown(
             """
             <div style='background-color:#90EE90; padding:10px; border-radius:8px; text-align:center; font-weight:bold;'>
