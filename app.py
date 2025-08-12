@@ -28,7 +28,7 @@ CSV_FILENAME = "phone_battery_info.csv"
 @st.cache_resource
 def load_model(model_path):
     checkpoint = torch.load(model_path, map_location=torch.device('cpu'))
-    st.write("checkpoint keys:", checkpoint.keys() if isinstance(checkpoint, dict) else "Not a dict, type: "+str(type(checkpoint)))
+    # ลบข้อความแสดง checkpoint keys ทิ้งแล้ว
 
     model = models.resnet50(pretrained=False)
     num_classes = len(CLASS_NAMES)
