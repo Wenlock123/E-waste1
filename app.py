@@ -20,7 +20,7 @@ CLASS_NAMES = [
 ]
 
 CSV_DRIVE_URL = "https://drive.google.com/uc?id=1xEccDMzWIHPEop58SlQdJwITr5y50mNj"
-MODEL_DRIVE_URL = "https://drive.google.com/uc?id=1JaFioKlbrbjbYCdMM77iOCoUOl5ZUKR8"  # ลิงก์ไฟล์ best_model_v2.pth
+MODEL_DRIVE_URL = "https://drive.google.com/uc?id=1JaFioKlbrbjbYCdMM77iOCoUOl5ZUKR8"  # best_model_v2.pth
 MODEL_FILENAME = "best_model_v2.pth"
 CSV_FILENAME = "phone_battery_info.csv"
 
@@ -29,15 +29,8 @@ CSV_FILENAME = "phone_battery_info.csv"
 def load_model(model_path):
     checkpoint = torch.load(model_path, map_location=torch.device('cpu'))
 
-    # โหลด ResNet50 (โครงสร้างต้องตรงกับตอนเทรน)
     model = models.resnet50(pretrained=False)
-
-    # ใช้ num_classes จาก checkpoint ถ้ามี
-    if "num_classes" in checkpoint:
-        num_classes = checkpoint["num_classes"]
-    else:
-        num_classes = len(CLASS_NAMES)
-
+    num_classes = checkpoint.get("num_classes", len(CLASS_NAMES))
     model.fc = nn.Linear(model.fc.in_features, num_classes)
     model.load_state_dict(checkpoint["model_state_dict"])
     model.eval()
@@ -146,24 +139,26 @@ if uploaded_file is not None:
 
     if row is not None:
         score = grade_battery_danger(row)
-        st.markdown(f"**Score:** {score}")
+        st.markdown(f"**Danger Score:** {score}")
 
         if "Li-Po" in str(row['battery_info']):
             st.write("📱 แบตเตอรี่ Li-Po ประกอบด้วยสารเคมีอันตราย เช่น ลิเทียม ที่ติดไฟง่าย เจลโพลิเมอร์ที่ไวไฟ และโลหะหนักอย่างโคบอลต์ นิกเกิล และแมงกานีส ซึ่งอาจก่อให้เกิดพิษต่อร่างกาย มะเร็ง หรือปนเปื้อนสิ่งแวดล้อม หากแบตรั่ว บวม หรือถูกเผา")
 
         st.markdown(
             """
-            <div style='background-color:#90EE90; padding:10px; border-radius:8px; text-align:center; font-weight:bold;'>
-                เลือกจัดส่งศูนย์ที่ใกล้ที่สุด
+            <div style='background-color:#90EE90; padding:12px; border-radius:8px; text-align:center; font-weight:bold; font-size:16px;'>
+                📍 เลือกศูนย์จัดส่งที่ใกล้ที่สุด
             </div>
             """,
             unsafe_allow_html=True
         )
 
-        # ลิงก์สถานที่ศูนย์จัดส่ง
-        st.markdown("[📍 ศูนย์ AIS เซ็นทรัลแอร์พอร์ต เชียงใหม่](https://goo.gl/maps/v6PbX3CgCxVzZSTV9)", unsafe_allow_html=True)
-        st.markdown("[📍 Siam TV สาขาหางดง](https://goo.gl/maps/qN4F7vD3EJXoAXkT8)", unsafe_allow_html=True)
-        st.markdown("[📍 ศูนย์ True เซ็นทรัลเฟสติวัลเชียงใหม่](https://goo.gl/maps/gnN4B4vRkDKGzQTF9)", unsafe_allow_html=True)
+        # ปุ่มกดไปยัง Google Maps
+        col1, col2 = st.columns(2)
+        with col1:
+            st.link_button("📍 ศูนย์ AIS เซ็นทรัลแอร์พอร์ต เชียงใหม่", "https://goo.gl/maps/v6PbX3CgCxVzZSTV9")
+        with col2:
+            st.link_button("📍 ศูนย์ True เซ็นทรัลเฟสติวัลเชียงใหม่", "https://goo.gl/maps/gnN4B4vRkDKGzQTF9")
 
     else:
         st.warning("⚠️ ไม่พบข้อมูลแบตเตอรี่สำหรับรุ่นนี้ในไฟล์ CSV.")
