@@ -20,7 +20,7 @@ CLASS_NAMES = [
 ]
 
 CSV_DRIVE_URL = "https://drive.google.com/uc?id=1xEccDMzWIHPEop58SlQdJwITr5y50mNj"
-MODEL_DRIVE_URL = "https://drive.google.com/uc?id=1JaFioKlbrbjbYCdMM77iOCoUOl5ZUKR8"
+MODEL_DRIVE_URL = "https://drive.google.com/uc?id=1JaFioKlbrbjbYCdMM77iOCoUOl5ZUKR8"  # ลิงก์ไฟล์ best_model_v2.pth
 MODEL_FILENAME = "best_model_v2.pth"
 CSV_FILENAME = "phone_battery_info.csv"
 
@@ -29,10 +29,16 @@ CSV_FILENAME = "phone_battery_info.csv"
 def load_model(model_path):
     checkpoint = torch.load(model_path, map_location=torch.device('cpu'))
 
+    # โหลด ResNet50 (โครงสร้างต้องตรงกับตอนเทรน)
     model = models.resnet50(pretrained=False)
-    num_classes = checkpoint.get("num_classes", len(CLASS_NAMES))
-    model.fc = nn.Linear(model.fc.in_features, num_classes)
 
+    # ใช้ num_classes จาก checkpoint ถ้ามี
+    if "num_classes" in checkpoint:
+        num_classes = checkpoint["num_classes"]
+    else:
+        num_classes = len(CLASS_NAMES)
+
+    model.fc = nn.Linear(model.fc.in_features, num_classes)
     model.load_state_dict(checkpoint["model_state_dict"])
     model.eval()
     return model
@@ -63,7 +69,10 @@ def predict_image(model, img):
     with torch.no_grad():
         outputs = model(image)
         _, preds = torch.max(outputs, 1)
-    return CLASS_NAMES[preds.item()] if preds.item() < len(CLASS_NAMES) else f"Class {preds.item()}"
+    if preds.item() < len(CLASS_NAMES):
+        return CLASS_NAMES[preds.item()]
+    else:
+        return f"Class {preds.item()}"
 
 # ==== ค้นหาชื่อรุ่นใกล้เคียงใน CSV ====
 def find_closest_model(df, predicted_class):
@@ -109,6 +118,7 @@ def grade_battery_danger(row):
 # ==== Streamlit UI ====
 st.set_page_config(page_title="E-WASTE", page_icon="♻️", layout="centered")
 
+# Header
 st.markdown(
     """
     <h1 style='text-align:center; color:green;'>♻️ E-WASTE</h1>
@@ -129,6 +139,7 @@ if uploaded_file is not None:
     st.image(uploaded_file, caption="📷 Uploaded Image", use_column_width=True)
     predicted_class = predict_image(model, uploaded_file)
 
+    # แสดงชื่อรุ่นมือถือที่ตรวจพบ
     st.markdown(f"### 📱 รุ่นมือถือที่ตรวจพบ: **{predicted_class}**")
 
     row = find_closest_model(df, predicted_class)
@@ -140,19 +151,19 @@ if uploaded_file is not None:
         if "Li-Po" in str(row['battery_info']):
             st.write("📱 แบตเตอรี่ Li-Po ประกอบด้วยสารเคมีอันตราย เช่น ลิเทียม ที่ติดไฟง่าย เจลโพลิเมอร์ที่ไวไฟ และโลหะหนักอย่างโคบอลต์ นิกเกิล และแมงกานีส ซึ่งอาจก่อให้เกิดพิษต่อร่างกาย มะเร็ง หรือปนเปื้อนสิ่งแวดล้อม หากแบตรั่ว บวม หรือถูกเผา")
 
-        st.markdown("<h4 style='text-align:center;'>📍 เลือกศูนย์จัดส่งใกล้คุณ</h4>", unsafe_allow_html=True)
+        st.markdown(
+            """
+            <div style='background-color:#90EE90; padding:10px; border-radius:8px; text-align:center; font-weight:bold;'>
+                เลือกจัดส่งศูนย์ที่ใกล้ที่สุด
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
-        # ปุ่มเลือกศูนย์จัดส่ง
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            if st.button("AIS เซ็นทรัลแอร์พอร์ต"):
-                st.markdown("[เปิดแผนที่](https://goo.gl/maps/v6PbX3CgCxVzZSTV9)")
-        with col2:
-            if st.button("Siam TV หางดง"):
-                st.markdown("[เปิดแผนที่](https://goo.gl/maps/qN4F7vD3EJXoAXkT8)")
-        with col3:
-            if st.button("True เซ็นทรัลเฟสติวัล"):
-                st.markdown("[เปิดแผนที่](https://goo.gl/maps/gnN4B4vRkDKGzQTF9)")
+        # ลิงก์สถานที่ศูนย์จัดส่ง
+        st.markdown("[📍 ศูนย์ AIS เซ็นทรัลแอร์พอร์ต เชียงใหม่](https://goo.gl/maps/v6PbX3CgCxVzZSTV9)", unsafe_allow_html=True)
+        st.markdown("[📍 Siam TV สาขาหางดง](https://goo.gl/maps/qN4F7vD3EJXoAXkT8)", unsafe_allow_html=True)
+        st.markdown("[📍 ศูนย์ True เซ็นทรัลเฟสติวัลเชียงใหม่](https://goo.gl/maps/gnN4B4vRkDKGzQTF9)", unsafe_allow_html=True)
 
     else:
         st.warning("⚠️ ไม่พบข้อมูลแบตเตอรี่สำหรับรุ่นนี้ในไฟล์ CSV.")
