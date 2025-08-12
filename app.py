@@ -20,29 +20,26 @@ CLASS_NAMES = [
 ]
 
 CSV_DRIVE_URL = "https://drive.google.com/uc?id=1xEccDMzWIHPEop58SlQdJwITr5y50mNj"
-MODEL_DRIVE_URL = "https://drive.google.com/uc?id=1mbbk2ljk6i0hKZYTT7urLl-vhVvETsGp"
-MODEL_FILENAME = "e_waste_model_2.pth"
+MODEL_DRIVE_URL = "https://drive.google.com/uc?id=1IGRYczTwiaGnouIOGI6QAzPPZOh0Jdj8"  # ลิงก์ไฟล์ใหม่ e_waste_model_new.pth
+MODEL_FILENAME = "e_waste_model_new.pth"
 CSV_FILENAME = "phone_battery_info.csv"
 
 # ==== โหลดโมเดล ResNet50 ====
 @st.cache_resource
 def load_model(model_path):
-    state_dict = torch.load(model_path, map_location=torch.device('cpu'))
+    checkpoint = torch.load(model_path, map_location=torch.device('cpu'))
 
-    # สร้างโมเดล ResNet50
+    # โหลด ResNet50 (โครงสร้างต้องตรงกับตอนเทรน)
     model = models.resnet50(pretrained=False)
 
-    # ตรวจจำนวนคลาสจากไฟล์โมเดล ถ้าเจอ fc.weight
-    fc_weight_key = next((k for k in state_dict.keys() if "fc.weight" in k), None)
-    if fc_weight_key:
-        num_classes = state_dict[fc_weight_key].shape[0]
+    # ใช้ num_classes จาก checkpoint ถ้ามี
+    if "num_classes" in checkpoint:
+        num_classes = checkpoint["num_classes"]
     else:
         num_classes = len(CLASS_NAMES)
 
     model.fc = nn.Linear(model.fc.in_features, num_classes)
-
-    # โหลดน้ำหนัก
-    model.load_state_dict(state_dict, strict=False)
+    model.load_state_dict(checkpoint["model_state_dict"])
     model.eval()
     return model
 
@@ -137,7 +134,6 @@ df = load_battery_data()
 # Upload or Take Photo
 st.subheader("📤 อัปโหลดภาพถ่าย หรือ ถ่ายภาพ")
 uploaded_file = st.file_uploader("", type=["jpg", "jpeg", "png"])
-# st.camera_input("📸 ถ่ายภาพ")  # เปิดใช้กล้องได้ถ้าต้องการ
 
 if uploaded_file is not None:
     st.image(uploaded_file, caption="📷 Uploaded Image", use_column_width=True)
@@ -152,11 +148,9 @@ if uploaded_file is not None:
         score = grade_battery_danger(row)
         st.markdown(f"**Score:** {score}")
         
-        # ผลเสีย
         if "Li-Po" in str(row['battery_info']):
             st.write("📱 แบตเตอรี่ Li-Po ประกอบด้วยสารเคมีอันตราย เช่น ลิเทียม ที่ติดไฟง่าย เจลโพลิเมอร์ที่ไวไฟ และโลหะหนักอย่างโคบอลต์ นิกเกิล และแมงกานีส ซึ่งอาจก่อให้เกิดพิษต่อร่างกาย มะเร็ง หรือปนเปื้อนสิ่งแวดล้อม หากแบตรั่ว บวม หรือถูกเผา")
 
-        # ปุ่มเลือกศูนย์จัดส่ง
         st.markdown(
             """
             <div style='background-color:#90EE90; padding:10px; border-radius:8px; text-align:center; font-weight:bold;'>
