@@ -28,18 +28,25 @@ CSV_FILENAME = "phone_battery_info.csv"
 @st.cache_resource
 def load_model(model_path):
     checkpoint = torch.load(model_path, map_location=torch.device('cpu'))
+    st.write("checkpoint keys:", checkpoint.keys() if isinstance(checkpoint, dict) else "Not a dict, type: "+str(type(checkpoint)))
 
-    # โหลด ResNet50 (โครงสร้างต้องตรงกับตอนเทรน)
     model = models.resnet50(pretrained=False)
+    num_classes = len(CLASS_NAMES)
 
-    # ใช้ num_classes จาก checkpoint ถ้ามี
-    if "num_classes" in checkpoint:
-        num_classes = checkpoint["num_classes"]
+    if isinstance(checkpoint, dict):
+        if "num_classes" in checkpoint:
+            num_classes = checkpoint["num_classes"]
+        model.fc = nn.Linear(model.fc.in_features, num_classes)
+
+        if "model_state_dict" in checkpoint:
+            model.load_state_dict(checkpoint["model_state_dict"])
+        else:
+            # checkpoint itself is state_dict
+            model.load_state_dict(checkpoint)
     else:
-        num_classes = len(CLASS_NAMES)
+        # ถ้า checkpoint ไม่ใช่ dict ก็ลองโหลดตรงๆ
+        model.load_state_dict(checkpoint)
 
-    model.fc = nn.Linear(model.fc.in_features, num_classes)
-    model.load_state_dict(checkpoint["model_state_dict"])
     model.eval()
     return model
 
