@@ -154,6 +154,7 @@ if uploaded_file is not None:
         if "Li-Po" in str(row['battery_info']):
             st.write("📱 แบตเตอรี่ Li-Po ประกอบด้วยสารเคมีอันตราย เช่น ลิเทียม ที่ติดไฟง่าย เจลโพลิเมอร์ที่ไวไฟ และโลหะหนักอย่างโคบอลต์ นิกเกิล และแมงกานีส ซึ่งอาจก่อให้เกิดพิษต่อร่างกาย มะเร็ง หรือปนเปื้อนสิ่งแวดล้อม หากแบตรั่ว บวม หรือถูกเผา")
 
+        # ส่วนหัวเลือกศูนย์
         st.markdown(
             """
             <div style='background-color:#90EE90; padding:10px; border-radius:8px; text-align:center; font-weight:bold;'>
@@ -163,9 +164,22 @@ if uploaded_file is not None:
             unsafe_allow_html=True
         )
 
-        st.markdown("[📍 ศูนย์ AIS เซ็นทรัลแอร์พอร์ต เชียงใหม่](https://goo.gl/maps/v6PbX3CgCxVzZSTV9)", unsafe_allow_html=True)
-        st.markdown("[📍 Siam TV สาขาหางดง](https://goo.gl/maps/qN4F7vD3EJXoAXkT8)", unsafe_allow_html=True)
-        st.markdown("[📍 ศูนย์ True เซ็นทรัลเฟสติวัลเชียงใหม่](https://goo.gl/maps/gnN4B4vRkDKGzQTF9)", unsafe_allow_html=True)
+        # ปุ่มลิงก์ศูนย์
+        st.markdown(
+            """
+            <a href='https://goo.gl/maps/v6PbX3CgCxVzZSTV9' target='_blank'
+               style='display:inline-block; background-color:#4CAF50; color:white; padding:10px 20px; 
+                      text-align:center; text-decoration:none; border-radius:8px; margin:5px;'>
+               ศูนย์ AIS เซ็นทรัลแอร์พอร์ต เชียงใหม่
+            </a>
+            <a href='https://goo.gl/maps/gnN4B4vRkDKGzQTF9' target='_blank'
+               style='display:inline-block; background-color:#FF5722; color:white; padding:10px 20px; 
+                      text-align:center; text-decoration:none; border-radius:8px; margin:5px;'>
+               ศูนย์ True เซ็นทรัลเฟสติวัลเชียงใหม่
+            </a>
+            """,
+            unsafe_allow_html=True
+        )
 
     else:
         st.warning("⚠️ ไม่พบข้อมูลแบตเตอรี่สำหรับรุ่นนี้ในไฟล์ CSV.")
