@@ -20,8 +20,8 @@ CLASS_NAMES = [
 ]
 
 CSV_DRIVE_URL = "https://drive.google.com/uc?id=1xEccDMzWIHPEop58SlQdJwITr5y50mNj"
-MODEL_DRIVE_URL = "https://drive.google.com/uc?id=1PfH1JF82_OOo_W24SITmB-aiCUYMxlPN"
-MODEL_FILENAME = "best_model_7classes.pth"
+MODEL_DRIVE_URL = "https://drive.google.com/uc?id=1mbbk2ljk6i0hKZYTT7urLl-vhVvETsGp"
+MODEL_FILENAME = "e_waste_model_2.pth"
 CSV_FILENAME = "phone_battery_info.csv"
 
 # ==== โหลดโมเดล ====
