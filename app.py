@@ -157,26 +157,28 @@ if uploaded_file is not None:
         # ส่วนหัวเลือกศูนย์
         st.markdown(
             """
-            <div style='background-color:#90EE90; padding:10px; border-radius:8px; text-align:center; font-weight:bold;'>
+            <div style='background-color:#90EE90; padding:10px; border-radius:8px; text-align:center; font-weight:bold; margin-bottom:10px;'>
                 เลือกจัดส่งศูนย์ที่ใกล้ที่สุด
             </div>
             """,
             unsafe_allow_html=True
         )
 
-        # ปุ่มลิงก์ศูนย์
+        # ปุ่มลิงก์ศูนย์ (เรียงต่อกัน)
         st.markdown(
             """
-            <a href='https://goo.gl/maps/v6PbX3CgCxVzZSTV9' target='_blank'
-               style='display:inline-block; background-color:#4CAF50; color:white; padding:10px 20px; 
-                      text-align:center; text-decoration:none; border-radius:8px; margin:5px;'>
-               ศูนย์ AIS เซ็นทรัลแอร์พอร์ต เชียงใหม่
-            </a>
-            <a href='https://goo.gl/maps/gnN4B4vRkDKGzQTF9' target='_blank'
-               style='display:inline-block; background-color:#FF5722; color:white; padding:10px 20px; 
-                      text-align:center; text-decoration:none; border-radius:8px; margin:5px;'>
-               ศูนย์ True เซ็นทรัลเฟสติวัลเชียงใหม่
-            </a>
+            <div style='display:flex; flex-direction:column; gap:10px;'>
+                <a href='https://maps.app.goo.gl/si6qDdk4ar2FTqWB7' target='_blank'
+                   style='background-color:#4CAF50; color:white; padding:12px; text-align:center; 
+                          text-decoration:none; border-radius:8px; font-weight:bold;'>
+                   📍 ศูนย์ AIS เซ็นทรัลแอร์พอร์ต เชียงใหม่
+                </a>
+                <a href='https://goo.gl/maps/gnN4B4vRkDKGzQTF9' target='_blank'
+                   style='background-color:#FF5722; color:white; padding:12px; text-align:center; 
+                          text-decoration:none; border-radius:8px; font-weight:bold;'>
+                   📍 ศูนย์ True เซ็นทรัลเฟสติวัล เชียงใหม่
+                </a>
+            </div>
             """,
             unsafe_allow_html=True
         )
